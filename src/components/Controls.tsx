@@ -29,7 +29,7 @@ export function Controls({
       {/* ── AI Background removal ── */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          Usuń tło (AI — zdjęcia)
+          Usuń tło ze zdjęcia (AI)
         </label>
         <button
           onClick={onRemoveBg}
@@ -78,15 +78,17 @@ export function Controls({
       {/* ── Color threshold removal ── */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          Wyodrębnij jasne elementy (logo)
+          Wytnij logo z ciemnego tła
         </label>
         <p className="text-xs text-gray-400 leading-relaxed">
-          Usuwa ciemne piksele i zostawia jasne — idealne do białego logo na czarnym tle.
+          Usuwa czarne/ciemne tło i zostawia samo logo — działa najlepiej gdy logo jest jasne na ciemnym tle.
         </p>
         <div className="flex flex-col gap-1">
           <div className="flex justify-between text-xs text-gray-400">
-            <span>Próg jasności</span>
-            <span className="font-mono text-indigo-500">{colorThreshold}</span>
+            <span>Siła działania</span>
+            <span className="font-medium text-indigo-500">
+              {colorThreshold < 60 ? 'delikatna' : colorThreshold < 130 ? 'średnia' : 'mocna'}
+            </span>
           </div>
           <input
             type="range"
@@ -98,8 +100,8 @@ export function Controls({
             className="w-full accent-indigo-500"
           />
           <div className="flex justify-between text-xs text-gray-300">
-            <span>usuwa więcej jasnych</span>
-            <span>zostawia więcej ciemnych</span>
+            <span>← delikatnie</span>
+            <span>mocno →</span>
           </div>
         </div>
         <button
@@ -118,7 +120,7 @@ export function Controls({
             <path strokeLinecap="round" strokeLinejoin="round"
               d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
-          {colorApplied ? 'Zastosuj ponownie' : 'Zastosuj próg'}
+          {colorApplied ? 'Zastosuj ponownie' : 'Wytnij ciemne tło'}
         </button>
       </div>
 
