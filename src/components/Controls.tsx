@@ -5,9 +5,15 @@ interface Props {
   onBgColor: (v: string) => void
   transparent: boolean
   onTransparent: (v: boolean) => void
+  // AI bg removal
   onRemoveBg: () => void
   isRemoving: boolean
   bgRemoved: boolean
+  // Color threshold removal
+  colorThreshold: number
+  onColorThreshold: (v: number) => void
+  onRemoveColorBg: () => void
+  colorApplied: boolean
 }
 
 export function Controls({
@@ -15,13 +21,15 @@ export function Controls({
   bgColor, onBgColor,
   transparent, onTransparent,
   onRemoveBg, isRemoving, bgRemoved,
+  colorThreshold, onColorThreshold, onRemoveColorBg, colorApplied,
 }: Props) {
   return (
     <div className="flex flex-col gap-4">
-      {/* AI Background removal */}
+
+      {/* ── AI Background removal ── */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          Usuwanie tła
+          Usuń tło (AI — zdjęcia)
         </label>
         <button
           onClick={onRemoveBg}
@@ -39,8 +47,7 @@ export function Controls({
             <>
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               Przetwarzam… (AI)
             </>
@@ -68,7 +75,54 @@ export function Controls({
         )}
       </div>
 
-      {/* Size */}
+      {/* ── Color threshold removal ── */}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Wyodrębnij jasne elementy (logo)
+        </label>
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Usuwa ciemne piksele i zostawia jasne — idealne do białego logo na czarnym tle.
+        </p>
+        <div className="flex flex-col gap-1">
+          <div className="flex justify-between text-xs text-gray-400">
+            <span>Próg jasności</span>
+            <span className="font-mono text-indigo-500">{colorThreshold}</span>
+          </div>
+          <input
+            type="range"
+            min={10}
+            max={240}
+            step={5}
+            value={colorThreshold}
+            onChange={(e) => onColorThreshold(Number(e.target.value))}
+            className="w-full accent-indigo-500"
+          />
+          <div className="flex justify-between text-xs text-gray-300">
+            <span>usuwa więcej jasnych</span>
+            <span>zostawia więcej ciemnych</span>
+          </div>
+        </div>
+        <button
+          onClick={onRemoveColorBg}
+          disabled={isRemoving}
+          className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl
+            border-2 font-medium text-sm transition-all active:scale-95
+            ${colorApplied
+              ? 'border-sky-400 bg-sky-50 text-sky-700 hover:bg-sky-100'
+              : 'border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:border-sky-400'
+            }
+            ${isRemoving ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          {colorApplied ? 'Zastosuj ponownie' : 'Zastosuj próg'}
+        </button>
+      </div>
+
+      {/* ── Size ── */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
           Rozmiar wyjściowy: <span className="text-indigo-600">{size}px</span>
@@ -88,7 +142,7 @@ export function Controls({
         </div>
       </div>
 
-      {/* Background */}
+      {/* ── Output background ── */}
       <div className="flex flex-col gap-2">
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
           Tło wyjściowe

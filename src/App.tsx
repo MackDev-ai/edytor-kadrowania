@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { removeBackground } from '@imgly/background-removal'
+import { removeColorBackground } from './utils/removeColorBg'
 import { UploadZone } from './components/UploadZone'
 import { ShapePicker } from './components/ShapePicker'
 import { Controls } from './components/Controls'
@@ -19,12 +20,19 @@ const SHAPE_LABELS: Record<Shape, string> = {
 export default function App() {
   const [image, setImage] = useState<HTMLImageElement | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  // Zapamiętuje obraz sprzed zastosowania progu koloru — do ponownego przetwarzania
+  const [preThresholdImage, setPreThresholdImage] = useState<HTMLImageElement | null>(null)
+
   const [shape, setShape] = useState<Shape>('circle')
   const [size, setSize] = useState(300)
   const [bgColor, setBgColor] = useState('#ffffff')
   const [transparent, setTransparent] = useState(false)
+
   const [isRemoving, setIsRemoving] = useState(false)
   const [bgRemoved, setBgRemoved] = useState(false)
+
+  const [colorThreshold, setColorThreshold] = useState(80)
+  const [colorApplied, setColorApplied] = useState(false)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const previewRef = useRef<HTMLCanvasElement>(null)
@@ -35,8 +43,11 @@ export default function App() {
     setImage(img)
     setImageFile(file)
     setBgRemoved(false)
+    setColorApplied(false)
+    setPreThresholdImage(null)
   }
 
+  // ── AI background removal ──────────────────────────────────────────────────
   async function handleRemoveBg() {
     if (!imageFile) return
     setIsRemoving(true)
@@ -49,6 +60,8 @@ export default function App() {
       img.onload = () => {
         URL.revokeObjectURL(url)
         setImage(img)
+        setPreThresholdImage(null) // reset bazy progu przy nowym AI-przetworzeniu
+        setColorApplied(false)
         setTransparent(true)
         setBgRemoved(true)
         setIsRemoving(false)
@@ -60,6 +73,25 @@ export default function App() {
     }
   }
 
+  // ── Color threshold removal ────────────────────────────────────────────────
+  async function handleRemoveColorBg() {
+    // Zawsze przetwarzaj od bazowego obrazu (przed poprzednim progiem),
+    // żeby ponowne kliknięcie z inną wartością nie degradowało obrazu
+    const base = preThresholdImage ?? image
+    if (!base) return
+
+    if (!preThresholdImage) {
+      // Pierwsze zastosowanie — zapisz bieżący obraz jako bazę
+      setPreThresholdImage(image)
+    }
+
+    const result = await removeColorBackground(base, colorThreshold)
+    setImage(result)
+    setTransparent(true)
+    setColorApplied(true)
+  }
+
+  // ── Download ───────────────────────────────────────────────────────────────
   function handleDownload() {
     if (!canvasRef.current) return
     const link = document.createElement('a')
@@ -68,15 +100,19 @@ export default function App() {
     link.click()
   }
 
+  // ── Reset ──────────────────────────────────────────────────────────────────
   function handleReset() {
     setImage(null)
     setImageFile(null)
+    setPreThresholdImage(null)
     setShape('circle')
     setSize(300)
     setBgColor('#ffffff')
     setTransparent(false)
     setIsRemoving(false)
     setBgRemoved(false)
+    setColorThreshold(80)
+    setColorApplied(false)
   }
 
   return (
@@ -118,7 +154,7 @@ export default function App() {
               </div>
 
               {/* Controls */}
-              <div className="flex-1 flex flex-col gap-5">
+              <div className="flex-1 flex flex-col gap-5 overflow-y-auto max-h-[600px] pr-1">
                 <ShapePicker value={shape} onChange={setShape} />
                 <Controls
                   size={size}
@@ -130,6 +166,10 @@ export default function App() {
                   onRemoveBg={handleRemoveBg}
                   isRemoving={isRemoving}
                   bgRemoved={bgRemoved}
+                  colorThreshold={colorThreshold}
+                  onColorThreshold={setColorThreshold}
+                  onRemoveColorBg={handleRemoveColorBg}
+                  colorApplied={colorApplied}
                 />
               </div>
             </div>
